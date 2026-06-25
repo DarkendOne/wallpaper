@@ -1,0 +1,152 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Wallpaper Studio - Custom Resolution Cropper</title>
+  <meta name="description" content="Generate high-quality custom resolution wallpapers from premium samples or your own uploads. Interactive pan, zoom, crop, and download.">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <link rel="stylesheet" href="./src/style.css">
+</head>
+<body>
+  <div class="app-container">
+    <!-- Sidebar Control Panel -->
+    <aside class="control-panel glass">
+      <header class="app-header">
+        <div class="logo-container">
+          <svg class="app-logo" viewBox="0 0 24 24" width="32" height="32" fill="none" stroke="currentColor" stroke-width="2">
+            <rect x="3" y="3" width="18" height="18" rx="2" ry="2" />
+            <circle cx="8.5" cy="8.5" r="1.5" />
+            <polyline points="21 15 16 10 5 21" />
+          </svg>
+          <div>
+            <h1>Wallpaper Studio</h1>
+            <p class="tagline">Custom Resolution Composer</p>
+          </div>
+        </div>
+      </header>
+
+      <!-- Resolution Selection Section -->
+      <section class="control-section">
+        <h3>Target Resolution</h3>
+        <div class="preset-grid">
+          <button class="btn btn-preset active" data-width="1920" data-height="1080" data-name="16:9 Desktop (FHD)">
+            <span class="preset-label">Desktop FHD</span>
+            <span class="preset-value">1920 x 1080</span>
+          </button>
+          <button class="btn btn-preset" data-width="2560" data-height="1440" data-name="16:9 Desktop (QHD)">
+            <span class="preset-label">Desktop QHD</span>
+            <span class="preset-value">2560 x 1440</span>
+          </button>
+          <button class="btn btn-preset" data-width="3840" data-height="2160" data-name="16:9 Desktop (4K)">
+            <span class="preset-label">Desktop 4K</span>
+            <span class="preset-value">3840 x 2160</span>
+          </button>
+          <button class="btn btn-preset" data-width="1080" data-height="1920" data-name="9:16 Mobile">
+            <span class="preset-label">Mobile Portrait</span>
+            <span class="preset-value">1080 x 1920</span>
+          </button>
+          <button class="btn btn-preset" data-width="3440" data-height="1440" data-name="21:9 Ultrawide">
+            <span class="preset-label">Ultrawide</span>
+            <span class="preset-value">3440 x 1440</span>
+          </button>
+          <button class="btn btn-preset" id="preset-custom-trigger" data-custom="true">
+            <span class="preset-label">Custom Size</span>
+            <span class="preset-value" id="custom-size-display">Enter dims</span>
+          </button>
+        </div>
+
+        <div class="custom-dims-row hidden" id="custom-dims-container">
+          <div class="input-group">
+            <label for="input-width">Width (px)</label>
+            <input type="number" id="input-width" min="100" max="8192" value="1920">
+          </div>
+          <div class="input-group">
+            <label for="input-height">Height (px)</label>
+            <input type="number" id="input-height" min="100" max="8192" value="1080">
+          </div>
+        </div>
+      </section>
+
+      <!-- Image Picker Section -->
+      <section class="control-section">
+        <h3>Image Source</h3>
+        <!-- Upload Zone -->
+        <div class="source-content" id="content-upload">
+          <div class="upload-dropzone" id="dropzone">
+            <svg class="upload-icon" viewBox="0 0 24 24" width="36" height="36" fill="none" stroke="currentColor" stroke-width="2">
+              <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+              <polyline points="17 8 12 3 7 8" />
+              <line x1="12" y1="3" x2="12" y2="15" />
+            </svg>
+            <p class="upload-text">Drag & drop image here or <span>browse files</span></p>
+            <input type="file" id="file-input" accept="image/*" class="hidden">
+          </div>
+        </div>
+      </section>
+
+      <footer class="actions">
+        <button class="btn btn-primary btn-block" id="btn-download">
+          <svg class="icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
+            <polyline points="7 10 12 15 17 10" />
+            <line x1="12" y1="15" x2="12" y2="3" />
+          </svg>
+          Download PNG Wallpaper
+        </button>
+        <div class="stats-row">
+          <span class="export-stats" id="export-stats">Resolution: 1920 x 1080 | Ratio: 16:9</span>
+        </div>
+      </footer>
+    </aside>
+
+    <!-- Crop Workspace Viewport -->
+    <main class="viewport-container">
+      <div class="workspace-header">
+        <h2>Interactive Canvas Editor</h2>
+        <p>Drag the crop window to select the frame, and adjust its size using the zoom controls</p>
+      </div>
+
+      <div class="canvas-workspace" id="canvas-workspace">
+        <img id="preview-image" src="" alt="Wallpaper Preview" draggable="false">
+        <div class="crop-frame" id="crop-frame">
+          <!-- Outer grid overlays for standard composition guidelines -->
+          <div class="crop-grid-lines">
+            <div class="grid-line v-line-1"></div>
+            <div class="grid-line v-line-2"></div>
+            <div class="grid-line h-line-1"></div>
+            <div class="grid-line h-line-2"></div>
+          </div>
+        </div>
+      </div>
+
+      <div class="viewport-controls">
+        <div class="zoom-controls">
+          <button class="btn btn-icon" id="zoom-out" title="Zoom Out">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </button>
+          <input type="range" id="zoom-range" min="100" max="300" value="100" class="zoom-slider">
+          <button class="btn btn-icon" id="zoom-in" title="Zoom In">
+            <svg viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
+              <line x1="12" y1="5" x2="12" y2="19" />
+              <line x1="5" y1="12" x2="19" y2="12" />
+            </svg>
+          </button>
+          <span class="zoom-badge" id="zoom-badge">100%</span>
+        </div>
+
+        <div class="view-actions">
+          <button class="btn btn-secondary btn-sm" id="btn-fit">Fit Center</button>
+          <button class="btn btn-secondary btn-sm" id="btn-fill">Fill Bounds</button>
+          <button class="btn btn-secondary btn-sm" id="btn-reset">Reset</button>
+        </div>
+      </div>
+    </main>
+  </div>
+  <script type="module" src="/src/main.ts"></script>
+</body>
+</html>
