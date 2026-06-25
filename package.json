@@ -1,4 +1,5 @@
 {
+  "name": "wallpaper",
   "private": true,
   "version": "1.0.0",
   "type": "module",
@@ -7,7 +8,11 @@
     "build": "tsc && vite build",
     "preview": "vite preview"
   },
+  "dependencies": {
+    "three": "^0.165.0"
+  },
   "devDependencies": {
+    "@types/three": "^0.165.0",
     "typescript": "^5.4.5",
     "vite": "^5.2.11"
   }
