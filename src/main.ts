@@ -10,6 +10,7 @@ let isDragging = false;
 let startX = 0;
 let startY = 0;
 let activeSourceType: 'three' | 'image' = 'three';
+let rotation = 0; // in degrees (0, 90, 180, 270)
 
 // Natural size of the active source
 let srcWidth = 1920;
@@ -39,6 +40,8 @@ const btnZoomIn = document.getElementById('zoom-in') as HTMLButtonElement;
 const btnZoomOut = document.getElementById('zoom-out') as HTMLButtonElement;
 
 // View Actions
+const btnRotateCcw = document.getElementById('btn-rotate-ccw') as HTMLButtonElement;
+const btnRotateCw = document.getElementById('btn-rotate-cw') as HTMLButtonElement;
 const btnFit = document.getElementById('btn-fit') as HTMLButtonElement;
 const btnFill = document.getElementById('btn-fill') as HTMLButtonElement;
 const btnReset = document.getElementById('btn-reset') as HTMLButtonElement;
@@ -188,9 +191,13 @@ animate();
 function getBaseScale(mode: 'fit' | 'fill' = 'fill'): number {
   const cropW = cropFrame.clientWidth;
   const cropH = cropFrame.clientHeight;
+  
+  const isRotated90 = (rotation % 180 !== 0);
+  const w = isRotated90 ? srcHeight : srcWidth;
+  const h = isRotated90 ? srcWidth : srcHeight;
 
-  const scaleX = cropW / srcWidth;
-  const scaleY = cropH / srcHeight;
+  const scaleX = cropW / w;
+  const scaleY = cropH / h;
 
   return mode === 'fill' ? Math.max(scaleX, scaleY) : Math.min(scaleX, scaleY);
 }
@@ -203,9 +210,13 @@ function constrainPan() {
   const cropH = cropFrame.clientHeight;
   const baseScale = getBaseScale('fill');
   const finalScale = baseScale * (zoomValue / 100);
+  
+  const isRotated90 = (rotation % 180 !== 0);
+  const w = isRotated90 ? srcHeight : srcWidth;
+  const h = isRotated90 ? srcWidth : srcHeight;
 
-  const scaledImgW = srcWidth * finalScale;
-  const scaledImgH = srcHeight * finalScale;
+  const scaledImgW = w * finalScale;
+  const scaledImgH = h * finalScale;
 
   const maxPanX = Math.max(0, (scaledImgW - cropW) / 2);
   const maxPanY = Math.max(0, (scaledImgH - cropH) / 2);
@@ -224,7 +235,7 @@ function updateTransform() {
   const baseScale = getBaseScale('fill');
   const finalScale = baseScale * (zoomValue / 100);
 
-  activeElement.style.transform = `translate(calc(-50% + ${panX}px), calc(-50% + ${panY}px)) scale(${finalScale})`;
+  activeElement.style.transform = `translate(calc(-50% + ${panX}px), calc(-50% + ${panY}px)) rotate(${rotation}deg) scale(${finalScale})`;
   zoomBadge.textContent = `${zoomValue}%`;
   zoomRange.value = zoomValue.toString();
 }
@@ -297,6 +308,7 @@ presetButtons.forEach(btn => {
     panX = 0;
     panY = 0;
     zoomValue = 100;
+    rotation = 0;
     updateLayout();
   });
 });
@@ -400,6 +412,18 @@ btnReset.addEventListener('click', () => {
   panX = 0;
   panY = 0;
   zoomValue = 100;
+  rotation = 0;
+  updateTransform();
+});
+
+// Rotate Buttons
+btnRotateCcw.addEventListener('click', () => {
+  rotation = (rotation - 90 + 360) % 360;
+  updateTransform();
+});
+
+btnRotateCw.addEventListener('click', () => {
+  rotation = (rotation + 90) % 360;
   updateTransform();
 });
 
@@ -427,6 +451,7 @@ function handleUploadedFile(file: File) {
       panX = 0;
       panY = 0;
       zoomValue = 100;
+      rotation = 0;
 
       updateLayout();
     };
@@ -485,7 +510,6 @@ btnDownload.addEventListener('click', () => {
   if (!ctx) return;
 
   const cropW = cropFrame.clientWidth;
-  const cropH = cropFrame.clientHeight;
   const baseScale = getBaseScale('fill');
   const finalScale = baseScale * (zoomValue / 100);
   
@@ -499,45 +523,24 @@ btnDownload.addEventListener('click', () => {
   const timestamp = new Date().toISOString().replace(/\.\d{3}/, '');
 
   if (activeSourceType === 'image') {
-    // 1. Calculate how the cropped portion maps onto the target resolution
-    // Inside workspace space:
-    // Center of crop frame is workspace center (0,0 relative coordinate)
-    // The image's top-left in workspace space:
-    // x = workspaceCenter.x + panX - (srcWidth * finalScale / 2)
-    // The crop frame top-left in workspace space:
-    // x = workspaceCenter.x - (cropW / 2)
-    // Difference between crop frame top-left and image top-left (in workspace pixels):
-    // cropOffsetX = (cropW / 2) - panX + (srcWidth * finalScale / 2) ? No, let's write it cleanly:
+    ctx.save();
+    // Move coordinate origin to the center of the export canvas
+    ctx.translate(targetWidth / 2, targetHeight / 2);
+    ctx.rotate((rotation * Math.PI) / 180);
 
-    // We can map backwards: What part of the original image is enclosed in the crop frame?
-    // Scale factor from workspace to natural image:
-    const workToNaturalScale = 1 / finalScale;
+    // Rotate pan coordinates back to compute where the image center should be relative to crop center
+    const rad = (-rotation * Math.PI) / 180;
+    const rotPanX = panX * Math.cos(rad) - panY * Math.sin(rad);
+    const rotPanY = panX * Math.sin(rad) + panY * Math.cos(rad);
 
-    // The center of the crop frame is at offsets (panX, panY) relative to the center of the image.
-    // In natural image pixels, the center of the crop frame is at:
-    const naturalCenterX = srcWidth / 2 - (panX * workToNaturalScale);
-    const naturalCenterY = srcHeight / 2 - (panY * workToNaturalScale);
+    const exportScale = targetWidth / cropW;
+    const destW = srcWidth * finalScale * exportScale;
+    const destH = srcHeight * finalScale * exportScale;
+    const destX = (rotPanX * exportScale) - destW / 2;
+    const destY = (rotPanY * exportScale) - destH / 2;
 
-    // Size of the crop frame in natural image pixels:
-    const naturalCropW = cropW * workToNaturalScale;
-    const naturalCropH = cropH * workToNaturalScale;
-
-    // Top-left of crop frame in natural image pixels:
-    const sourceX = naturalCenterX - naturalCropW / 2;
-    const sourceY = naturalCenterY - naturalCropH / 2;
-
-    // Draw slice of image onto target size canvas
-    ctx.drawImage(
-      previewImage,
-      sourceX,
-      sourceY,
-      naturalCropW,
-      naturalCropH,
-      0,
-      0,
-      targetWidth,
-      targetHeight
-    );
+    ctx.drawImage(previewImage, destX, destY, destW, destH);
+    ctx.restore();
 
     triggerDownload(exportCanvas.toDataURL(exportFormat), `wallpaper_${timestamp}.${ext}`);
   } else {
@@ -554,33 +557,23 @@ btnDownload.addEventListener('click', () => {
     // Render a single high quality frame
     renderer.render(scene, camera);
 
-    // Now copy the WebGL canvas content. Since we resized the renderer to target resolution,
-    // the WebGL canvas itself contains the exact pixel dimensions!
-    // But we need to crop it based on the pan/zoom parameters:
-    // Inside workspace space:
-    // The ThreeJS canvas behaves exactly like an image.
-    // Its scale is `finalScale` and translate is `panX`, `panY`.
-    // Let's draw it using the same slice logic onto the export canvas!
+    // Now copy the WebGL canvas content rotated
+    ctx.save();
+    ctx.translate(targetWidth / 2, targetHeight / 2);
+    ctx.rotate((rotation * Math.PI) / 180);
 
-    const workToNaturalScale = 1 / finalScale;
-    const naturalCenterX = targetWidth / 2 - (panX * workToNaturalScale);
-    const naturalCenterY = targetHeight / 2 - (panY * workToNaturalScale);
-    const naturalCropW = cropW * workToNaturalScale;
-    const naturalCropH = cropH * workToNaturalScale;
-    const sourceX = naturalCenterX - naturalCropW / 2;
-    const sourceY = naturalCenterY - naturalCropH / 2;
+    const rad = (-rotation * Math.PI) / 180;
+    const rotPanX = panX * Math.cos(rad) - panY * Math.sin(rad);
+    const rotPanY = panX * Math.sin(rad) + panY * Math.cos(rad);
 
-    ctx.drawImage(
-      threeCanvas,
-      sourceX,
-      sourceY,
-      naturalCropW,
-      naturalCropH,
-      0,
-      0,
-      targetWidth,
-      targetHeight
-    );
+    const exportScale = targetWidth / cropW;
+    const destW = targetWidth * finalScale * exportScale;
+    const destH = targetHeight * finalScale * exportScale;
+    const destX = (rotPanX * exportScale) - destW / 2;
+    const destY = (rotPanY * exportScale) - destH / 2;
+
+    ctx.drawImage(threeCanvas, destX, destY, destW, destH);
+    ctx.restore();
 
     triggerDownload(exportCanvas.toDataURL(exportFormat), `wallpaper-generative_${timestamp}.${ext}`);
 
