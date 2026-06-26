@@ -489,6 +489,7 @@ btnDownload.addEventListener('click', () => {
   const baseScale = getBaseScale('fill');
   const finalScale = baseScale * (zoomValue / 100);
   const ext = exportFormat === 'image/webp' ? 'webp' : 'png';
+  const timestamp = new Date().toISOString().replace(/\.\d{3}/, '');
 
   if (activeSourceType === 'image') {
     // 1. Calculate how the cropped portion maps onto the target resolution
@@ -531,7 +532,7 @@ btnDownload.addEventListener('click', () => {
       targetHeight
     );
 
-    triggerDownload(exportCanvas.toDataURL(exportFormat), `wallpaper.${ext}`);
+    triggerDownload(exportCanvas.toDataURL(exportFormat), `wallpaper_${timestamp}.${ext}`);
   } else {
     // 2. Three.js Export:
     // Resize the ThreeJS renderer directly to the target resolution temporarily
@@ -574,7 +575,7 @@ btnDownload.addEventListener('click', () => {
       targetHeight
     );
 
-    triggerDownload(exportCanvas.toDataURL(exportFormat), `wallpaper-generative.${ext}`);
+    triggerDownload(exportCanvas.toDataURL(exportFormat), `wallpaper-generative_${timestamp}.${ext}`);
 
     // Restore renderer back to original dimensions
     renderer.setSize(originalWidth, originalHeight, true);
