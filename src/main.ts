@@ -465,14 +465,14 @@ fileInput.addEventListener('change', () => {
 });
 
 // --- Download Handler ---
-let exportFormat: 'image/png' | 'image/webp' = 'image/png';
+let exportFormat: 'image/png' | 'image/webp' | 'image/jpeg' | 'image/avif' = 'image/png';
 const formatButtons = document.querySelectorAll('.btn-format');
 
 formatButtons.forEach(btn => {
   btn.addEventListener('click', () => {
     formatButtons.forEach(b => b.classList.remove('active'));
     btn.classList.add('active');
-    exportFormat = btn.getAttribute('data-format') as 'image/png' | 'image/webp' || 'image/png';
+    exportFormat = btn.getAttribute('data-format') as any || 'image/png';
   });
 });
 
@@ -488,7 +488,14 @@ btnDownload.addEventListener('click', () => {
   const cropH = cropFrame.clientHeight;
   const baseScale = getBaseScale('fill');
   const finalScale = baseScale * (zoomValue / 100);
-  const ext = exportFormat === 'image/webp' ? 'webp' : 'png';
+  
+  const formatMap: Record<string, string> = {
+    'image/png': 'png',
+    'image/webp': 'webp',
+    'image/jpeg': 'jpg',
+    'image/avif': 'avif'
+  };
+  const ext = formatMap[exportFormat] || 'png';
   const timestamp = new Date().toISOString().replace(/\.\d{3}/, '');
 
   if (activeSourceType === 'image') {
