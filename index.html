@@ -92,13 +92,20 @@
       </section>
 
       <footer class="actions">
+        <div class="format-toggle-container">
+          <span class="format-title">Export Format</span>
+          <div class="format-toggle-grid">
+            <button class="btn btn-format active" data-format="image/png">PNG</button>
+            <button class="btn btn-format" data-format="image/webp">WebP</button>
+          </div>
+        </div>
         <button class="btn btn-primary btn-block" id="btn-download">
           <svg class="icon" viewBox="0 0 24 24" width="20" height="20" fill="none" stroke="currentColor" stroke-width="2">
             <path d="M21 15v4a2 2 0 0 1-2 2H5a2 2 0 0 1-2-2v-4" />
             <polyline points="7 10 12 15 17 10" />
             <line x1="12" y1="15" x2="12" y2="3" />
           </svg>
-          Download PNG Wallpaper
+          Download Wallpaper
         </button>
         <div class="stats-row">
           <span class="export-stats" id="export-stats">Resolution: 1920 x 1080 | Ratio: 16:9</span>

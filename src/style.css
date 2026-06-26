@@ -287,6 +287,39 @@ body {
   background: rgba(10, 11, 16, 0.5);
 }
 
+.format-toggle-container {
+  display: flex;
+  flex-direction: column;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.format-title {
+  font-size: 0.75rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+.format-toggle-grid {
+  display: grid;
+  grid-template-columns: repeat(2, 1fr);
+  gap: 8px;
+}
+
+.btn-format {
+  padding: 8px 12px;
+  font-size: 0.8125rem;
+}
+
+.btn-format.active {
+  background: rgba(99, 102, 241, 0.15);
+  border-color: var(--accent-primary);
+  box-shadow: 0 0 10px rgba(99, 102, 241, 0.2);
+  color: #fff;
+}
+
 .btn-primary {
   background: var(--accent-gradient);
   border: none;

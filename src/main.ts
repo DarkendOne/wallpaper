@@ -465,6 +465,16 @@ fileInput.addEventListener('change', () => {
 });
 
 // --- Download Handler ---
+let exportFormat: 'image/png' | 'image/webp' = 'image/png';
+const formatButtons = document.querySelectorAll('.btn-format');
+
+formatButtons.forEach(btn => {
+  btn.addEventListener('click', () => {
+    formatButtons.forEach(b => b.classList.remove('active'));
+    btn.classList.add('active');
+    exportFormat = btn.getAttribute('data-format') as 'image/png' | 'image/webp' || 'image/png';
+  });
+});
 
 btnDownload.addEventListener('click', () => {
   // Offscreen canvas at exact target resolution
@@ -478,6 +488,7 @@ btnDownload.addEventListener('click', () => {
   const cropH = cropFrame.clientHeight;
   const baseScale = getBaseScale('fill');
   const finalScale = baseScale * (zoomValue / 100);
+  const ext = exportFormat === 'image/webp' ? 'webp' : 'png';
 
   if (activeSourceType === 'image') {
     // 1. Calculate how the cropped portion maps onto the target resolution
@@ -520,7 +531,7 @@ btnDownload.addEventListener('click', () => {
       targetHeight
     );
 
-    triggerDownload(exportCanvas.toDataURL('image/png'), 'wallpaper.png');
+    triggerDownload(exportCanvas.toDataURL(exportFormat), `wallpaper.${ext}`);
   } else {
     // 2. Three.js Export:
     // Resize the ThreeJS renderer directly to the target resolution temporarily
@@ -563,7 +574,7 @@ btnDownload.addEventListener('click', () => {
       targetHeight
     );
 
-    triggerDownload(exportCanvas.toDataURL('image/png'), 'wallpaper-generative.png');
+    triggerDownload(exportCanvas.toDataURL(exportFormat), `wallpaper-generative.${ext}`);
 
     // Restore renderer back to original dimensions
     renderer.setSize(originalWidth, originalHeight, true);
