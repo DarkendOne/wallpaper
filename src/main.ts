@@ -196,9 +196,30 @@ function getBaseScale(mode: 'fit' | 'fill' = 'fill'): number {
 }
 
 /**
+ * Constrains panX and panY so that the image/canvas bounds always cover the crop frame.
+ */
+function constrainPan() {
+  const cropW = cropFrame.clientWidth;
+  const cropH = cropFrame.clientHeight;
+  const baseScale = getBaseScale('fill');
+  const finalScale = baseScale * (zoomValue / 100);
+
+  const scaledImgW = srcWidth * finalScale;
+  const scaledImgH = srcHeight * finalScale;
+
+  const maxPanX = Math.max(0, (scaledImgW - cropW) / 2);
+  const maxPanY = Math.max(0, (scaledImgH - cropH) / 2);
+
+  panX = Math.max(-maxPanX, Math.min(maxPanX, panX));
+  panY = Math.max(-maxPanY, Math.min(maxPanY, panY));
+}
+
+/**
  * Updates the visual transform (CSS translate + scale) of the active element.
  */
 function updateTransform() {
+  constrainPan();
+
   const activeElement = activeSourceType === 'three' ? threeCanvas : previewImage;
   const baseScale = getBaseScale('fill');
   const finalScale = baseScale * (zoomValue / 100);
